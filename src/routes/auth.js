@@ -65,7 +65,7 @@ router.post('/signup', async (req, res) => {
       expires_at: expiresAt
     });
 
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email.html?token=${token}`;
     await sendVerificationEmail(email, firstName, verifyUrl);
 
     // Phone OTP: only fires if you've configured Twilio AND turned on PHONE_VERIFICATION_REQUIRED.
@@ -143,7 +143,7 @@ router.post('/resend-verification', async (req, res) => {
       business_id: business.id, token, expires_at: expiresAt
     });
 
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email.html?token=${token}`;
     await sendVerificationEmail(business.email, business.first_name, verifyUrl);
 
     res.json({ message: 'Verification email resent.' });
