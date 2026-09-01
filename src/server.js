@@ -8,7 +8,24 @@ import walletRoutes from './routes/wallet.js';
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+
+// Accept the fixed production URL, plus any Vercel preview URL for this project
+// (e.g. https://fundukuzama-5u62am97n-smanga.vercel.app) — Vercel generates a
+// new one of these on every push, so a single fixed FRONTEND_URL keeps breaking.
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  /^https:\/\/fundukuzama[a-z0-9-]*\.vercel\.app$/
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // same-origin / server-to-server requests
+    const ok = allowedOrigins.some(rule =>
+      rule instanceof RegExp ? rule.test(origin) : rule === origin
+    );
+    callback(ok ? null : new Error('Not allowed by CORS'), ok);
+  }
+}));
 app.use(express.json());
 
 // Basic protection against signup/login abuse — free, no extra service needed.
