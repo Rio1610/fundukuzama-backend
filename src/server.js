@@ -9,6 +9,11 @@ dotenv.config();
 
 const app = express();
 
+// Render sits behind a reverse proxy — this tells Express to trust the
+// X-Forwarded-For header it sets, so express-rate-limit can correctly
+// identify individual users instead of treating everyone as one client.
+app.set('trust proxy', 1);
+
 // Accept the fixed production URL, plus any Vercel preview URL for this project
 // (e.g. https://fundukuzama-5u62am97n-smanga.vercel.app) — Vercel generates a
 // new one of these on every push, so a single fixed FRONTEND_URL keeps breaking.
