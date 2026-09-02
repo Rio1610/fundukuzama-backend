@@ -100,4 +100,46 @@ router.post('/withdraw', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/wallet/invest
+ * body: { amount, smeName }
+ * Records an investment into another SME on the marketplace. Reuses the
+ * wallet_transactions table (type: 'sme_investment', note: the SME's name)
+ * so it shows up both in wallet history and in the dashboard's holdings list.
+ */
+router.post('/invest', async (req, res) => {
+  try {
+    const { amount, smeName } = req.body;
+    const val = parseFloat(amount);
+    if (!val || val < 10) return res.status(400).json({ error: 'Minimum investment is R10.' });
+    if (!smeName) return res.status(400).json({ error: 'Missing SME name.' });
+
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('wallet_balance')
+      .eq('id', req.businessId)
+      .single();
+
+    if (val > parseFloat(business.wallet_balance)) {
+      return res.status(400).json({ error: 'Insufficient wallet balance.' });
+    }
+
+    const newBalance = parseFloat(business.wallet_balance) - val;
+
+    await supabase.from('businesses').update({ wallet_balance: newBalance }).eq('id', req.businessId);
+    await supabase.from('wallet_transactions').insert({
+      business_id: req.businessId,
+      type: 'sme_investment',
+      method: null,
+      amount: val,
+      note: smeName
+    });
+
+    res.json({ message: 'Investment recorded.', balance: newBalance });
+  } catch (err) {
+    console.error('Invest error:', err);
+    res.status(500).json({ error: 'Something went wrong processing the investment.' });
+  }
+});
+
 export default router;
