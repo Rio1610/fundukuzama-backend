@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { supabase } from '../supabaseClient.js';
 import { sendVerificationEmail, sendWelcomeEmail } from '../emailService.js';
 import { sendPhoneOtp, checkPhoneOtp, phoneVerificationRequired } from '../phoneService.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
 
@@ -224,6 +225,34 @@ router.post('/phone/verify-otp', async (req, res) => {
   } catch (err) {
     console.error('Verify OTP error:', err);
     res.status(500).json({ error: 'Could not verify code.' });
+  }
+});
+
+/**
+ * GET /api/auth/me
+ * Returns the signed-in business's basic info — used by the frontend to
+ * show "Hi, [name]" once logged in, on page load as well as after login.
+ */
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const { data: business, error } = await supabase
+      .from('businesses')
+      .select('id, first_name, last_name, business_name, email, wallet_balance')
+      .eq('id', req.businessId)
+      .single();
+
+    if (error || !business) return res.status(404).json({ error: 'Account not found.' });
+
+    res.json({
+      firstName: business.first_name,
+      lastName: business.last_name,
+      businessName: business.business_name,
+      email: business.email,
+      walletBalance: business.wallet_balance
+    });
+  } catch (err) {
+    console.error('Me route error:', err);
+    res.status(500).json({ error: 'Something went wrong loading your account.' });
   }
 });
 
