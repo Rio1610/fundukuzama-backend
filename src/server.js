@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import walletRoutes from './routes/wallet.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -37,8 +38,14 @@ app.use(express.json());
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
 app.use('/api/auth', authLimiter);
 
+// Admin login gets a stricter limit — it's a privileged account, worth
+// making brute-forcing it slower than a regular business login attempt.
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 8 });
+app.use('/api/admin/login', adminLoginLimiter);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
